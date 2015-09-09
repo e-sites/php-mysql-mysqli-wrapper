@@ -258,7 +258,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_unbuffered_query($query, mysqli $mysqli = null)
 	{
-		mysqli_query(getLinkIdentifier($mysqli), $query, MYSQLI_USE_RESULT);
+		return mysqli_query(getLinkIdentifier($mysqli), $query, MYSQLI_USE_RESULT);
 	}
 
 	/**
