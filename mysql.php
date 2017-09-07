@@ -511,7 +511,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_data_seek(mysqli_result $result, $row_number = 0)
 	{
-		return mysqli_field_seek($result, $row_number);
+		return mysqli_data_seek($result, $row_number);
 	}
 
 	/**
