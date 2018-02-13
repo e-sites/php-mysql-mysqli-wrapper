@@ -212,16 +212,19 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	}
 
 	/**
-	 * Not implemented
+	 * Adjusts the result pointer to an arbitrary row in the result
 	 *
-	 * @todo implement
-	 *
-	 * @return null
+	 * @param $result
+	 * @param $row
+	 * @param int $field
+	 * @return bool
 	 */
-	function mysql_db_name()
+	function mysql_db_name(mysqli_result $result, $row, $field=null)
 	{
-		trigger_error('The function mysql_db_name() is not implemented', E_USER_WARNING);
-		return false;
+	    mysqli_data_seek($result,$row);
+	    $f = mysqli_fetch_row($result);
+	    
+	    return $f[0];
 	}
 
 	/**
@@ -398,13 +401,15 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * Get table name of field
 	 *
 	 * @param $result
-	 * @param $i
+	 * @param $row
 	 * @return bool
 	 */
-	function mysql_tablename($result, $i)
+	function mysql_tablename(mysqli_result $result, $row)
 	{
-		trigger_error('Not implemented', E_USER_WARNING);
-		return false;
+	    mysqli_data_seek($result, $row);
+	    $f = mysqli_fetch_array($result);
+	    
+	    return $f[0];
 	}
 
 	/**
@@ -489,8 +494,8 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_field_len(mysqli_result $result, $field_offset = 0)
 	{
-		trigger_error('This function is not implemented', E_USER_WARNING);
-		return false;
+	    $fieldInfo = mysqli_fetch_field_direct($result, $field_offset);
+	    return $fieldInfo->length;
 	}
 
 	/**
@@ -634,17 +639,32 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	/**
 	 * Get the flags associated with the specified field in a result
 	 *
-	 *  @todo implement
+	 * credit to andre at koethur dot de from php.net and NinjaKC from stackoverflow.com
 	 *
 	 * @param mysqli_result $result
 	 * @param int $field_offset
 	 * @return bool
 	 */
-	function mysql_field_flags(mysqli_result $result, $field_offset = 0)
+	function mysql_field_flags(mysqli_result $result , $field_offset = 0)
 	{
-		trigger_error('This function is not implemented', E_USER_WARNING);
-		return false;
-	}
+	    $flags_num = mysqli_fetch_field_direct($result,$field_offset)->flags;
+	    
+	    if (!isset($flags))
+	    {
+	        $flags = array();
+	        $constants = get_defined_constants(true);
+	        foreach ($constants['mysqli'] as $c => $n) if (preg_match('/MYSQLI_(.*)_FLAG$/', $c, $m)) if (!array_key_exists($n, $flags)) $flags[$n] = $m[1];
+	    }
+	    
+	    $result = array();
+	    foreach ($flags as $n => $t) if ($flags_num & $n) $result[] = $t;
+	    
+	    $return = implode(' ', $result);
+	    $return = str_replace('PRI_KEY','PRIMARY_KEY',$return);
+	    $return = strtolower($return);
+	    
+	    return $return;
+	} 
 
 	/**
 	 * Set result pointer to a specified field offset
