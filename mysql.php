@@ -639,7 +639,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	/**
 	 * Get the flags associated with the specified field in a result
 	 *
-	 * credit to andre at koethur dot de from php.net and NinjaKC from stackoverflow.com
+	 * credit to Dave Smith from phpclasses.org, andre at koethur dot de from php.net and NinjaKC from stackoverflow.com
 	 *
 	 * @param mysqli_result $result
 	 * @param int $field_offset
