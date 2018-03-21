@@ -14,11 +14,6 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 		trigger_error('The extension "MySQLi" is not available', E_USER_ERROR);
 	}
 
-	// The function name "getLinkIdentifier" will be used to return a valid link_indentifier, make it is available
-	if (function_exists('getLinkIdentifier')) {
-		trigger_error('The function name "getLinkIdentifier" is already defined, please change the function name', E_USER_ERROR);
-	}
-
 	// Define MySQL constants
 	define('MYSQL_CLIENT_COMPRESS', MYSQLI_CLIENT_COMPRESS);
 	define('MYSQL_CLIENT_IGNORE_SPACE', MYSQLI_CLIENT_IGNORE_SPACE);
@@ -29,24 +24,26 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	define('MYSQL_NUM', MYSQLI_NUM);
 	define('MYSQL_BOTH', MYSQLI_BOTH);
 
+	
 	// Will contain the link identifier
-	$link = null;
+	class mysql_global {
+        static $link = null;
+		
+		/**
+		 * Get the link identifier
+		 *
+		 * @param mysqli $mysqli
+		 * @return mysqli|null
+		 */
+		static function getLink( mysqli $mysqli = null ){
+			if (!$mysqli) {
+				$mysqli = self::$link;
+			}
 
-	/**
-	 * Get the link identifier
-	 *
-	 * @param mysqli $mysqli
-	 * @return mysqli|null
-	 */
-	function getLinkIdentifier(mysqli $mysqli = null)
-	{
-		if (!$mysqli) {
-			global $link;
-			$mysqli = $link;
-		}
-
-		return $mysqli;
-	}
+			return $mysqli;
+		}			
+    }
+	
 
 	/**
 	 * Open a connection to a MySQL Server
@@ -58,10 +55,8 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_connect($server, $username, $password, $new_link = false, $client_flags = 0)
 	{
-		global $link;
-
-		$link = mysqli_connect($server, $username, $password);
-		return $link;
+		mysql_global::$link = mysqli_connect($server, $username, $password);
+		return mysql_global::$link;
 	}
 
 	/**
@@ -74,21 +69,17 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_pconnect($server, $username, $password, $new_link = false, $client_flags = 0)
 	{
-		global $link;
-
-		$link = mysqli_connect('p:' . $server, $username, $password);
-		return $link;
+		mysql_global::$link = mysqli_connect('p:' . $server, $username, $password);
+		return mysql_global::$link;
 	}
 
 	/**
 	 * @param $databaseName
 	 * @return bool
 	 */
-	function mysql_select_db($databaseName)
+	function mysql_select_db($databaseName, mysqli $link = null )
 	{
-		global $link;
-
-		return mysqli_select_db($link, $databaseName);
+		return mysqli_select_db(mysql_global::getLink($mysqli), $databaseName);
 	}
 
 	/**
@@ -98,7 +89,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_query($query, mysqli $mysqli = null)
 	{
-		return getLinkIdentifier($mysqli)->query($query);
+		return mysql_global::getLink($mysqli)->query($query);
 	}
 
 	/**
@@ -108,7 +99,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_real_escape_string($string, mysqli $mysqli = null)
 	{
-		return getLinkIdentifier($mysqli)->escape_string($string);
+		return mysql_global::getLink($mysqli)->escape_string($string);
 	}
 
 	/**
@@ -173,7 +164,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_affected_rows(mysqli $mysqli = null)
 	{
-		return mysqli_affected_rows(getLinkIdentifier($mysqli));
+		return mysqli_affected_rows(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -181,7 +172,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_client_encoding(mysqli $mysqli = null)
 	{
-		return mysqli_character_set_name(getLinkIdentifier($mysqli));
+		return mysqli_character_set_name(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -190,7 +181,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_close(mysqli $mysqli = null)
 	{
-		return mysqli_close(getLinkIdentifier($mysqli));
+		return mysqli_close(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -208,20 +199,23 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_errno(mysqli $mysqli = null)
 	{
-		return mysqli_errno(getLinkIdentifier($mysqli));
+		return mysqli_errno(mysql_global::getLink($mysqli));
 	}
 
 	/**
-	 * Not implemented
+	 * Adjusts the result pointer to an arbitrary row in the result
 	 *
-	 * @todo implement
-	 *
-	 * @return null
+	 * @param $result
+	 * @param $row
+	 * @param int $field
+	 * @return bool
 	 */
-	function mysql_db_name()
+	function mysql_db_name(mysqli_result $result, $row, $field=null)
 	{
-		trigger_error('The function mysql_db_name() is not implemented', E_USER_WARNING);
-		return false;
+	    mysqli_data_seek($result,$row);
+	    $f = mysqli_fetch_row($result);
+	    
+	    return $f[0];
 	}
 
 	/**
@@ -230,7 +224,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_error(mysqli $mysqli = null)
 	{
-		return mysqli_error(getLinkIdentifier($mysqli));
+		return mysqli_error(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -249,7 +243,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_ping(mysqli $mysqli = null)
 	{
-		return mysqli_ping(getLinkIdentifier($mysqli));
+		return mysqli_ping(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -258,7 +252,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_unbuffered_query($query, mysqli $mysqli = null)
 	{
-		return mysqli_query(getLinkIdentifier($mysqli), $query, MYSQLI_USE_RESULT);
+		return mysqli_query(mysql_global::getLink($mysqli), $query, MYSQLI_USE_RESULT);
 	}
 
 	/**
@@ -286,7 +280,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	{
 		trigger_error('This function is deprecated. It is preferable to use mysql_query() to issue an SQL Query: SHOW DATABASES statement instead.', E_USER_DEPRECATED);
 
-		return mysqli_query(getLinkIdentifier($mysqli), 'SHOW DATABASES');
+		return mysqli_query(mysql_global::getLink($mysqli), 'SHOW DATABASES');
 	}
 
 	/**
@@ -299,7 +293,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	{
 		trigger_error('This function is deprecated. It is preferable to use mysql_query() to issue an SQL SHOW COLUMNS FROM table [LIKE \'name\'] statement instead.', E_USER_DEPRECATED);
 
-		$mysqli = getLinkIdentifier($mysqli);
+		$mysqli = mysql_global::getLink($mysqli);
 		$db = mysqli_escape_string($mysqli, $database_name);
 		$table = mysqli_escape_string($mysqli, $table_name);
 
@@ -312,7 +306,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_list_processes(mysqli $mysqli = null)
 	{
-		return mysqli_query(getLinkIdentifier($mysqli), 'SHOW PROCESSLIST');
+		return mysqli_query(mysql_global::getLink($mysqli), 'SHOW PROCESSLIST');
 	}
 
 	/**
@@ -322,7 +316,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_set_charset($charset, mysqli $mysqli = null)
 	{
-		return mysqli_set_charset(getLinkIdentifier($mysqli), $charset);
+		return mysqli_set_charset(mysql_global::getLink($mysqli), $charset);
 	}
 
 	/**
@@ -331,7 +325,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_info(mysqli $mysqli = null)
 	{
-		$result = mysqli_info(getLinkIdentifier($mysqli));
+		$result = mysqli_info(mysql_global::getLink($mysqli));
 		if ($result === NULL) {
 			$result = false;
 		}
@@ -347,7 +341,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_stat(mysqli $mysqli = null)
 	{
-		return mysqli_stat(getLinkIdentifier($mysqli));
+		return mysqli_stat(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -358,7 +352,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_thread_id(mysqli $mysqli = null)
 	{
-		return mysqli_thread_id(getLinkIdentifier($mysqli));
+		return mysqli_thread_id(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -369,7 +363,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_get_host_info(mysqli $mysqli = null)
 	{
-		return mysqli_get_host_info(getLinkIdentifier($mysqli));
+		return mysqli_get_host_info(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -380,7 +374,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_get_proto_info(mysqli $mysqli = null)
 	{
-		return mysqli_get_proto_info(getLinkIdentifier($mysqli));
+		return mysqli_get_proto_info(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -391,20 +385,22 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_get_server_info(mysqli $mysqli = null)
 	{
-		return mysqli_get_server_info(getLinkIdentifier($mysqli));
+		return mysqli_get_server_info(mysql_global::getLink($mysqli));
 	}
 
 	/**
 	 * Get table name of field
 	 *
 	 * @param $result
-	 * @param $i
+	 * @param $row
 	 * @return bool
 	 */
-	function mysql_tablename($result, $i)
+	function mysql_tablename(mysqli_result $result, $row)
 	{
-		trigger_error('Not implemented', E_USER_WARNING);
-		return false;
+	    mysqli_data_seek($result, $row);
+	    $f = mysqli_fetch_array($result);
+	    
+	    return $f[0];
 	}
 
 	/**
@@ -415,7 +411,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_insert_id(mysqli $mysqli = null)
 	{
-		return mysqli_insert_id(getLinkIdentifier($mysqli));
+		return mysqli_insert_id(mysql_global::getLink($mysqli));
 	}
 
 	/**
@@ -458,7 +454,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	{
 		trigger_error('This function is deprecated. It is preferable to use mysql_query() to issue an SQL SHOW TABLES [FROM db_name] [LIKE \'pattern\'] statement instead.', E_USER_DEPRECATED);
 
-		$mysqli = getLinkIdentifier($mysqli);
+		$mysqli = mysql_global::getLink($mysqli);
 		$db = mysqli_escape_string($mysqli, $database_name);
 
 		return mysqli_query($mysqli, sprintf('SHOW TABLES FROM %s', $db));
@@ -489,8 +485,8 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_field_len(mysqli_result $result, $field_offset = 0)
 	{
-		trigger_error('This function is not implemented', E_USER_WARNING);
-		return false;
+	    $fieldInfo = mysqli_fetch_field_direct($result, $field_offset);
+	    return $fieldInfo->length;
 	}
 
 	/**
@@ -634,17 +630,32 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	/**
 	 * Get the flags associated with the specified field in a result
 	 *
-	 *  @todo implement
+	 * credit to Dave Smith from phpclasses.org, andre at koethur dot de from php.net and NinjaKC from stackoverflow.com
 	 *
 	 * @param mysqli_result $result
 	 * @param int $field_offset
 	 * @return bool
 	 */
-	function mysql_field_flags(mysqli_result $result, $field_offset = 0)
+	function mysql_field_flags(mysqli_result $result , $field_offset = 0)
 	{
-		trigger_error('This function is not implemented', E_USER_WARNING);
-		return false;
-	}
+	    $flags_num = mysqli_fetch_field_direct($result,$field_offset)->flags;
+	    
+	    if (!isset($flags))
+	    {
+	        $flags = array();
+	        $constants = get_defined_constants(true);
+	        foreach ($constants['mysqli'] as $c => $n) if (preg_match('/MYSQLI_(.*)_FLAG$/', $c, $m)) if (!array_key_exists($n, $flags)) $flags[$n] = $m[1];
+	    }
+	    
+	    $result = array();
+	    foreach ($flags as $n => $t) if ($flags_num & $n) $result[] = $t;
+	    
+	    $return = implode(' ', $result);
+	    $return = str_replace('PRI_KEY','PRIMARY_KEY',$return);
+	    $return = strtolower($return);
+	    
+	    return $return;
+	} 
 
 	/**
 	 * Set result pointer to a specified field offset
