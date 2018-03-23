@@ -27,7 +27,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	
 	// Will contain the link identifier
 	class mysql_global {
-        static $link = null;
+    static $link = null;
 		
 		/**
 		 * Get the link identifier
@@ -39,11 +39,29 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 			if (!$mysqli) {
 				$mysqli = self::$link;
 			}
-
 			return $mysqli;
-		}			
-    }
+		}		
+  }
 	
+	function mysql_valid_result($result){
+		if( $result instanceof mysqli_result ){
+			return true;
+		}else{
+			$type = gettype( $result );
+			$trace = debug_backtrace();
+			$c = $trace[1];
+			$message = sprintf("PHP Warning:  %s expected mysqli_result, %s given - %s on line %s", 
+				$c['function'], $type, $c['file'], $c['line']
+			);
+			// This is to show where the error is coming from.
+			error_log($message);
+			// This is for the stack trace and where this message is coming from.
+			
+			$message = "Invalid mysqli_result!";
+			trigger_error($message, E_USER_WARNING );
+			return false;
+		}
+	}
 
 	/**
 	 * Open a connection to a MySQL Server
@@ -77,7 +95,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param $databaseName
 	 * @return bool
 	 */
-	function mysql_select_db($databaseName, mysqli $link = null )
+	function mysql_select_db($databaseName, mysqli $mysqli = null )
 	{
 		return mysqli_select_db(mysql_global::getLink($mysqli), $databaseName);
 	}
@@ -106,56 +124,36 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param mysqli_result $result
 	 * @return bool|array
 	 */
-	function mysql_fetch_assoc(mysqli_result $result)
+	function mysql_fetch_assoc($result)
 	{
-		$result = $result->fetch_assoc();
-		if ($result === NULL) {
-			$result = false;
-		}
-
-		return $result;
+		return mysql_valid_result( $result ) ? $result->fetch_assoc() : false;
 	}
 
 	/**
 	 * @param mysqli_result $result
 	 * @return object|stdClass
 	 */
-	function mysql_fetch_object(mysqli_result $result)
+	function mysql_fetch_object( $result )
 	{
-		$result = $result->fetch_object();
-		if ($result === NULL) {
-			$result = false;
-		}
-
-		return $result;
+		return mysql_valid_result( $result ) ? $result->fetch_object() : false;
 	}
 
 	/**
 	 * @param mysqli_result $result
 	 * @return bool|int
 	 */
-	function mysql_num_rows(mysqli_result $result)
+	function mysql_num_rows( $result )
 	{
-		$result = $result->num_rows;
-		if ($result === NULL) {
-			$result = false;
-		}
-
-		return $result;
+		return mysql_valid_result( $result ) ? $result->num_rows : false;
 	}
 
 	/**
 	 * @param mysqli_result $result
 	 * @return bool|array
 	 */
-	function mysql_fetch_row(mysqli_result $result)
+	function mysql_fetch_row( $result )
 	{
-		$result = $result->fetch_row();
-		if ($result === NULL) {
-			$result = false;
-		}
-
-		return $result;
+		return mysql_valid_result( $result ) ? $result->fetch_row() : false;
 	}
 
 	/**
@@ -212,10 +210,13 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_db_name(mysqli_result $result, $row, $field=null)
 	{
-	    mysqli_data_seek($result,$row);
-	    $f = mysqli_fetch_row($result);
-	    
-	    return $f[0];
+		if( mysql_valid_result( $result ) ){
+			$result->data_seek( $row );
+			$f = $result->fetch_row();
+			return $f[0];
+		}else{
+			return false;
+		}
 	}
 
 	/**
@@ -232,9 +233,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param $result_type
 	 * @return void
 	 */
-	function mysql_fetch_array(mysqli_result $result, $result_type = MYSQL_BOTH)
+	function mysql_fetch_array($result, $result_type = MYSQL_BOTH)
 	{
-		return mysqli_fetch_array($result, $result_type);
+		return mysql_valid_result( $result ) ? $result->fetch_array($result_type) : false;
 	}
 
 	/**
@@ -267,9 +268,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param mysqli_result $result
 	 * @return void
 	 */
-	function mysql_free_result(mysqli_result $result)
+	function mysql_free_result($result)
 	{
-		return mysqli_free_result($result);
+		return mysql_valid_result( $result ) ? $result->free() : false;
 	}
 
 	/**
@@ -395,12 +396,15 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param $row
 	 * @return bool
 	 */
-	function mysql_tablename(mysqli_result $result, $row)
+	function mysql_tablename($result, $row)
 	{
-	    mysqli_data_seek($result, $row);
-	    $f = mysqli_fetch_array($result);
-	    
-	    return $f[0];
+		if( !mysql_valid_result($result)){
+			return false;
+		}
+		
+		$result->data_seek($row);
+		$f = $result->fetch_array();
+		return $f[0];
 	}
 
 	/**
@@ -439,9 +443,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param mysqli_result $result
 	 * @return int
 	 */
-	function mysql_num_fields(mysqli_result $result)
+	function mysql_num_fields($result)
 	{
-		return mysqli_num_fields($result);
+		return mysql_valid_result($result) ? $result->num_fields() : false;
 	}
 
 	/**
@@ -467,13 +471,15 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param int $field_offset
 	 * @return bool|object
 	 */
-	function mysql_fetch_field(mysqli_result $result, $field_offset = 0)
+	function mysql_fetch_field($result, $field_offset = 0)
 	{
-		if ($field_offset) {
-			mysqli_field_seek($result, $field_offset);
+		if(!mysql_valid_result($result)){
+			return false;
 		}
-
-		return mysqli_fetch_field($result);
+		
+		$field_offset = (int)$field_offset;
+		$result->field_seek($field_offset);
+		return $result->fetch_field();		
 	}
 
 	/**
@@ -483,10 +489,14 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param int $field_offset
 	 * @return bool
 	 */
-	function mysql_field_len(mysqli_result $result, $field_offset = 0)
+	function mysql_field_len($result, $field_offset = 0)
 	{
-	    $fieldInfo = mysqli_fetch_field_direct($result, $field_offset);
-	    return $fieldInfo->length;
+		if(!mysql_valid_result($result)){
+			return false;
+		}
+		
+		$fieldInfo = $result->fetch_field_direct( $field_offset );
+		return $fieldInfo->length;
 	}
 
 	/**
@@ -505,9 +515,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param int $row_number
 	 * @return void
 	 */
-	function mysql_data_seek(mysqli_result $result, $row_number = 0)
+	function mysql_data_seek( $result, $row_number = 0)
 	{
-		return mysqli_data_seek($result, $row_number);
+		return mysql_valid_result($result) ? $result->data_seek($row_number) : false;
 	}
 
 	/**
@@ -529,9 +539,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param mysqli_result $result
 	 * @return array|bool
 	 */
-	function mysql_fetch_lengths(mysqli_result $result)
+	function mysql_fetch_lengths($result)
 	{
-		return mysqli_fetch_lengths($result);
+		return mysql_valid_result($result) ? $result->fetch_lengths() : false;
 	}
 
 	/**
@@ -540,10 +550,14 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param $field_offset
 	 * @return string
 	 */
-	function mysql_field_type(mysqli_result $result, $field_offset = 0)
+	function mysql_field_type($result, $field_offset = 0)
 	{
+		if(!mysql_valid_result($result)){
+			return false;
+		}
+		
 		$unknown = 'unknown';
-		$info = mysqli_fetch_field_direct($result, $field_offset);
+		$info = $result->fetch_field_direct($field_offset);
 		if (empty($info->type)) {
 			return $unknown;
 		}
@@ -617,14 +631,13 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param $field_offset
 	 * @return bool
 	 */
-	function mysql_field_table(mysqli_result $result, $field_offset = 0)
+	function mysql_field_table($result, $field_offset = 0)
 	{
-		$info = mysqli_fetch_field_direct($result, $field_offset);
-		if (empty($info->table)) {
+		if(!mysql_valid_result($result)){
 			return false;
 		}
-
-		return $info->table;
+		$info = $result->fetch_field_direct($field_offset);
+		return !(empty($info->table)) ? $info->table : false;
 	}
 
 	/**
@@ -636,25 +649,29 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param int $field_offset
 	 * @return bool
 	 */
-	function mysql_field_flags(mysqli_result $result , $field_offset = 0)
+	function mysql_field_flags( $result, $field_offset = 0)
 	{
-	    $flags_num = mysqli_fetch_field_direct($result,$field_offset)->flags;
-	    
-	    if (!isset($flags))
-	    {
-	        $flags = array();
-	        $constants = get_defined_constants(true);
-	        foreach ($constants['mysqli'] as $c => $n) if (preg_match('/MYSQLI_(.*)_FLAG$/', $c, $m)) if (!array_key_exists($n, $flags)) $flags[$n] = $m[1];
-	    }
-	    
-	    $result = array();
-	    foreach ($flags as $n => $t) if ($flags_num & $n) $result[] = $t;
-	    
-	    $return = implode(' ', $result);
-	    $return = str_replace('PRI_KEY','PRIMARY_KEY',$return);
-	    $return = strtolower($return);
-	    
-	    return $return;
+		if(!mysql_valid_result($result)){
+			return false;
+		}
+		
+		$flags_num = $result->fetch_field_direct($field_offset)->flags;
+		
+		if (!isset($flags))
+		{
+			$flags = array();
+			$constants = get_defined_constants(true);
+			foreach ($constants['mysqli'] as $c => $n) if (preg_match('/MYSQLI_(.*)_FLAG$/', $c, $m)) if (!array_key_exists($n, $flags)) $flags[$n] = $m[1];
+		}
+		
+		$result = array();
+		foreach ($flags as $n => $t) if ($flags_num & $n) $result[] = $t;
+		
+		$return = implode(' ', $result);
+		$return = str_replace('PRI_KEY','PRIMARY_KEY',$return);
+		$return = strtolower($return);
+		
+		return $return;
 	} 
 
 	/**
@@ -664,9 +681,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param int $field_offset
 	 * @return bool
 	 */
-	function mysql_field_seek(mysqli_result $result, $field_offset = 0)
+	function mysql_field_seek($result, $field_offset = 0)
 	{
-		return mysqli_field_seek($result, $field_offset);
+		return mysql_valid_result($result) ? $result->field_seek($field_offset) : false;
 	}
 
 	/**
