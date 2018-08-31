@@ -84,11 +84,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param $databaseName
 	 * @return bool
 	 */
-	function mysql_select_db($databaseName)
+	function mysql_select_db($databaseName, mysqli $mysqli = null)
 	{
-		global $link;
-
-		return mysqli_select_db($link, $databaseName);
+		return getLinkIdentifier($mysqli)->select_db($databaseName);
 	}
 
 	/**
