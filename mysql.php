@@ -30,7 +30,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	define('MYSQL_BOTH', MYSQLI_BOTH);
 
 	// Will contain the link identifier
-	$link = null;
+	$__MYSQLI_WRAPPER_LINK = null;
 
 	/**
 	 * Get the link identifier
@@ -41,8 +41,8 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	function getLinkIdentifier(mysqli $mysqli = null)
 	{
 		if (!$mysqli) {
-			global $link;
-			$mysqli = $link;
+			global $__MYSQLI_WRAPPER_LINK;
+			$mysqli = $__MYSQLI_WRAPPER_LINK;
 		}
 
 		return $mysqli;
@@ -58,10 +58,10 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_connect($server, $username, $password, $new_link = false, $client_flags = 0)
 	{
-		global $link;
+		global $__MYSQLI_WRAPPER_LINK;
 
-		$link = mysqli_connect($server, $username, $password);
-		return $link;
+		$__MYSQLI_WRAPPER_LINK = mysqli_connect($server, $username, $password);
+		return $__MYSQLI_WRAPPER_LINK;
 	}
 
 	/**
@@ -74,10 +74,10 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_pconnect($server, $username, $password, $new_link = false, $client_flags = 0)
 	{
-		global $link;
+		global $__MYSQLI_WRAPPER_LINK;
 
-		$link = mysqli_connect('p:' . $server, $username, $password);
-		return $link;
+		$__MYSQLI_WRAPPER_LINK = mysqli_connect('p:' . $server, $username, $password);
+		return $__MYSQLI_WRAPPER_LINK;
 	}
 
 	/**
@@ -86,9 +86,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_select_db($databaseName)
 	{
-		global $link;
+		global $__MYSQLI_WRAPPER_LINK;
 
-		return mysqli_select_db($link, $databaseName);
+		return mysqli_select_db($__MYSQLI_WRAPPER_LINK, $databaseName);
 	}
 
 	/**
