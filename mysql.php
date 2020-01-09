@@ -110,7 +110,15 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	{
 		return getLinkIdentifier($mysqli)->escape_string($string);
 	}
-
+	
+	/**
+	 * @param $string
+	 * @return string
+	 */
+	function mysql_escape_string($string)
+	{
+		return mysql_real_escape_string($string);
+	}
 	/**
 	 * @param mysqli_result $result
 	 * @return bool|array
