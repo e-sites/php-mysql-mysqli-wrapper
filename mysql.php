@@ -72,12 +72,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 * @param $password
 	 * @return mysqli|null
 	 */
-	function mysql_pconnect($server, $username, $password, $new_link = false, $client_flags = 0)
+	function mysql_pconnect($server, $username, $password, $client_flags = 0)
 	{
-		global $__MYSQLI_WRAPPER_LINK;
-
-		$__MYSQLI_WRAPPER_LINK = mysqli_connect('p:' . $server, $username, $password);
-		return $__MYSQLI_WRAPPER_LINK;
+		return mysql_connect('p:' . $server, $username, $password, false, $client_flags);
 	}
 
 	/**
