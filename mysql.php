@@ -108,7 +108,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	{
 		return getLinkIdentifier($mysqli)->escape_string($string);
 	}
-	
+
 	/**
 	 * @param $string
 	 * @return string
@@ -229,7 +229,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	{
 	    mysqli_data_seek($result,$row);
 	    $f = mysqli_fetch_row($result);
-	    
+
 	    return $f[0];
 	}
 
@@ -414,7 +414,7 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	{
 	    mysqli_data_seek($result, $row);
 	    $f = mysqli_fetch_array($result);
-	    
+
 	    return $f[0];
 	}
 
@@ -654,23 +654,23 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	function mysql_field_flags(mysqli_result $result , $field_offset = 0)
 	{
 	    $flags_num = mysqli_fetch_field_direct($result,$field_offset)->flags;
-	    
+
 	    if (!isset($flags))
 	    {
 	        $flags = array();
 	        $constants = get_defined_constants(true);
 	        foreach ($constants['mysqli'] as $c => $n) if (preg_match('/MYSQLI_(.*)_FLAG$/', $c, $m)) if (!array_key_exists($n, $flags)) $flags[$n] = $m[1];
 	    }
-	    
+
 	    $result = array();
 	    foreach ($flags as $n => $t) if ($flags_num & $n) $result[] = $t;
-	    
+
 	    $return = implode(' ', $result);
 	    $return = str_replace('PRI_KEY','PRIMARY_KEY',$return);
 	    $return = strtolower($return);
-	    
+
 	    return $return;
-	} 
+	}
 
 	/**
 	 * Set result pointer to a specified field offset
@@ -687,8 +687,6 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	/**
 	 * Selects a database and executes a query on it
 	 *
-	 * @todo implement
-	 *
 	 * @param $database
 	 * @param $query
 	 * @param mysqli $mysqli
@@ -696,7 +694,11 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_db_query($database, $query, mysqli $mysqli = null)
 	{
-		trigger_error('This function is deprecated since PHP 5.3.0 and therefore not implemented', E_USER_DEPRECATED);
+		if(mysql_select_db($database, $mysqli))
+		{
+			return mysql_query($query, $mysqli);
+		}
+
 		return false;
 	}
 
