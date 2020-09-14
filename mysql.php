@@ -272,7 +272,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_get_client_info()
 	{
-		return mysqli_get_client_info();
+		global $__MYSQLI_WRAPPER_LINK;
+		// Better use the reference to current connection
+		return mysqli_get_client_info($__MYSQLI_WRAPPER_LINK);		
 	}
 
 	/**
@@ -281,7 +283,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	 */
 	function mysql_free_result(mysqli_result $result)
 	{
-		return mysqli_free_result($result);
+		// mysqli_free_result have a void return
+		mysqli_free_result($result);
+		return TRUE;
 	}
 
 	/**
