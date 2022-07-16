@@ -29,6 +29,9 @@ if (!extension_loaded('mysql') && !function_exists('mysql_connect')) {
 	define('MYSQL_NUM', MYSQLI_NUM);
 	define('MYSQL_BOTH', MYSQLI_BOTH);
 
+	// Disable exceptions at PHP 8.1
+	mysqli_report(MYSQLI_REPORT_OFF);
+
 	// Will contain the link identifier
 	$__MYSQLI_WRAPPER_LINK = null;
 
